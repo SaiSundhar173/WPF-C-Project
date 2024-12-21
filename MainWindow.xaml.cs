@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using WpfApp1;
 
 namespace WpfApp
 {
@@ -6,6 +7,7 @@ namespace WpfApp
     {
         public MainWindow()
         {
+            DatabaseHelper.initializeDatabase();
             InitializeComponent();
         }
 
@@ -13,7 +15,7 @@ namespace WpfApp
         {
             // Get the username from the TextBox
             string username = UsernameTextBox.Text;
-
+            DatabaseHelper.insertName(username);
             // Check if the username is empty
             if (string.IsNullOrWhiteSpace(username))
             {

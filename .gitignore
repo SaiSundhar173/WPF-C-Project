@@ -1,6 +1,7 @@
 # Ignore build files
 bin/
 obj/
+db/
 
 # Ignore user-specific files
 *.suo
