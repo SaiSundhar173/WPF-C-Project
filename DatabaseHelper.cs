@@ -1,53 +1,73 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.SQLite;
+using FinanceTracker;
 
 namespace WpfApp1
 {
     public static class DatabaseHelper
     {
+        private const string databasePath = @"..\..\..\db\Expense.db";
+        private const string ConnectionString = "Data Source=" + databasePath + ";Version=3;";
+
         public static void initializeDatabase()
         {
-            string databasePath = @"..\..\..\db\Users.db"; // Path for the SQLite database file
-
             // Check if the database already exists
             if (!System.IO.File.Exists(databasePath))
             {
                 // Create the database file
                 SQLiteConnection.CreateFile(databasePath);
                 Console.WriteLine("Database created successfully.");
+                using var connection = new SQLiteConnection(ConnectionString);
+                connection.Open();
 
-                // Initialize the database schema
-                using (var connection = new SQLiteConnection($"Data Source={databasePath};Version=3;"))
-                {
-                    connection.Open();
-
-                    string createTableQuery = @"
-                    CREATE TABLE Username (
-                        name TEXT NOT NULL
-                    )";
-
-                    SQLiteCommand command = new SQLiteCommand(createTableQuery, connection);
-                    command.ExecuteNonQuery();
-                    Console.WriteLine("Table 'Users' created successfully.");
-                }
-            }
-            else
-            {
-                Console.WriteLine("Database already exists.");
+                var createTableQuery = "CREATE TABLE Expenses (" +
+                                       "Id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                                       "Date TEXT, " +
+                                       "Section TEXT, " +
+                                       "Description TEXT, " +
+                                       "Amount REAL)";
+                using var command = new SQLiteCommand(createTableQuery, connection);
+                command.ExecuteNonQuery();
             }
         }
-        public static void insertName(string username)
+
+        public static void AddExpense(Expense expense)
         {
-            string databasePath = @"..\..\..\db\Users.db";
-            using (var connection = new SQLiteConnection($"Data Source={databasePath};Version=3;"))
+            using var connection = new SQLiteConnection(ConnectionString);
+            connection.Open();
+
+            var query = "INSERT INTO Expenses (Date, Section, Description, Amount) VALUES (@Date, @Section, @Description, @Amount)";
+            using var command = new SQLiteCommand(query, connection);
+            command.Parameters.AddWithValue("@Date", expense.Date);
+            command.Parameters.AddWithValue("@Section", expense.Section);
+            command.Parameters.AddWithValue("@Description", expense.Description);
+            command.Parameters.AddWithValue("@Amount", expense.Amount);
+            command.ExecuteNonQuery();
+        }
+
+        public static List<Expense> LoadExpenses()
+        {
+            var expenses = new List<FinanceTracker.Expense>();
+            using var connection = new SQLiteConnection(ConnectionString);
+            connection.Open();
+
+            var query = "SELECT Date, Section, Description, Amount FROM Expenses";
+            using var command = new SQLiteCommand(query, connection);
+            using var reader = command.ExecuteReader();
+
+            while (reader.Read())
             {
-                connection.Open();
-                string insertQuery = "INSERT INTO Username (name) VALUES (@name)";
-                SQLiteCommand command = new SQLiteCommand(insertQuery, connection);
-                command.Parameters.AddWithValue("@name", username);
-                command.ExecuteNonQuery();
-                Console.WriteLine($"Username '{username}' inserted into the database.");
+                expenses.Add(new Expense
+                {
+                    Date = DateTime.Parse(reader["Date"].ToString()),
+                    Section = reader["Section"].ToString(),
+                    Description = reader["Description"].ToString(),
+                    Amount = decimal.Parse(reader["Amount"].ToString())
+                });
             }
+
+            return expenses;
         }
     }
 }
