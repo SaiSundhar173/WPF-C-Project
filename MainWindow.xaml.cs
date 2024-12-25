@@ -16,6 +16,7 @@ namespace FinanceTracker
             InitializeComponent();
             _expenses = DatabaseHelper.LoadExpenses();
             LoadRecentTransactions();
+            LoadHighestExpensesThisMonth();
         }
 
         private void AddExpense_Click(object sender, RoutedEventArgs e)
@@ -34,6 +35,7 @@ namespace FinanceTracker
                 DatabaseHelper.AddExpense(expense);
                 _expenses.Add(expense);
                 LoadRecentTransactions();
+                LoadHighestExpensesThisMonth();
 
                 ExpenseDate.SelectedDate = null;
                 ExpenseSection.Clear();
@@ -52,6 +54,17 @@ namespace FinanceTracker
         {
             RecentTransactionsList.ItemsSource = _expenses
                 .OrderByDescending(e => e.Date)
+                .Take(10)
+                .ToList();
+        }
+
+        private void LoadHighestExpensesThisMonth()
+        {
+            var currentMonth = DateTime.Now.Month;
+            var currentYear = DateTime.Now.Year;
+            HighestExpensesList.ItemsSource = _expenses
+                .Where(e => e.Date.Month == currentMonth && e.Date.Year == currentYear)
+                .OrderByDescending(e => e.Amount)
                 .Take(10)
                 .ToList();
         }
